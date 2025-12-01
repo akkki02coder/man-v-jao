@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sorry — Pink Hearts (Fixed)</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600&family=Great+Vibes&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --lightpink: #ffe6ef;
+    --paper: #f6efe0;
+    --ink: #2b0f3a;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    background: var(--lightpink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: system-ui, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    overflow:hidden;
+  }
+
+  /* hearts container sits behind card */
+  #hearts {
+    position:fixed;
+    inset:0;
+    z-index:0;
+    pointer-events:none;
+  }
+
+  .paper {
+    z-index:2;
+    width:min(820px,92vw);
+    background: var(--paper);
+    border-radius:12px;
+    padding:40px;
+    box-shadow:0 26px 80px rgba(0,0,0,0.14);
+    border:1px solid rgba(0,0,0,0.05);
+    background-image:
+      linear-gradient(transparent 96%, rgba(0,0,0,0.02) 96%),
+      linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px);
+    background-size: 100% 28px, 6px 100%;
+    transform: translateZ(0);
+  }
+
+  h1 {
+    margin:0 0 12px 0;
+    font-family: 'Great Vibes', cursive;
+    font-size:44px;
+    color:var(--ink);
+  }
+
+  #typed {
+    font-family: 'Dancing Script', cursive;
+    font-size:20px;
+    color:var(--ink);
+    line-height:1.7;
+    white-space:pre-wrap;
+    min-height:170px;
+    word-break:break-word;
+  }
+
+  #signature {
+    margin-top:18px;
+    text-align:right;
+    font-family:'Great Vibes', cursive;
+    font-size:26px;
+    color:var(--ink);
+    opacity:0;
+    transform:translateY(8px);
+    transition: opacity .36s ease, transform .36s ease;
+  }
+  #signature.show { opacity:1; transform:none; }
+
+  /* tiny responsive */
+  @media(max-width:520px){
+    .paper { padding:28px; }
+    h1 { font-size:36px; }
+    #typed { font-size:18px; }
+    #signature { font-size:22px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="hearts" aria-hidden="true"></div>
+
+<main class="paper" role="main" aria-live="polite">
+  <h1>I'm really sorry</h1>
+  <div id="typed" aria-atomic="true"></div>
+  <div id="signature">— Akshat</div>
+</main>
+
+<script>
+(function(){
+  // Use plain ASCII apostrophe to avoid encoding issues
+  const MESSAGE = "I'm really sorry for the way I spoke earlier. My mind wasn't in the right place and I ended up sounding rude, which I never meant to do. You didn't deserve that tone from me, and it honestly hurts me to know my words might have hurt you. I value our bond more than I show sometimes, and I never want you to feel unimportant because of my behaviour. It was just a messy moment for me, not a reflection of how I truly feel. I hope you can understand that, and I'm genuinely trying to be better with my words and the way I express myself.";
+
+  const typedEl = document.getElementById('typed');
+  const sigEl = document.getElementById('signature');
+  const heartsRoot = document.getElementById('hearts');
+
+  // Wait for page+fonts to be ready
+  async function waitForReady(){
+    // wait for full load
+    if (document.readyState !== 'complete'){
+      await new Promise(res => window.addEventListener('load', res, {once:true}));
+    }
+    // try to wait fonts (if supported)
+    if (document.fonts && document.fonts.ready){
+      try { await document.fonts.ready; } catch(e){ /* ignore */ }
+    }
+    // small extra delay so rendering stabilizes
+    await new Promise(r => setTimeout(r, 180));
+  }
+
+  // Typing function (uses textContent)
+  async function typeText(text){
+    typedEl.textContent = '';
+    sigEl.classList.remove('show');
+    const chars = Array.from(text);
+    const base = 38; // ms per char (increase to slow)
+    for (let i=0;i<chars.length;i++){
+      const ch = chars[i];
+      typedEl.textContent += ch;
+      // adaptive delay
+      let delay = base + (Math.random()*12 - 6);
+      if (ch === ',' ) delay += base * 2;
+      if (ch === '.' || ch === '!' || ch === '?' ) delay += base * 4;
+      // paragraph break spacing (not strictly needed)
+      if (i % 70 === 0 && i>0) delay += base * 5;
+      await new Promise(res => setTimeout(res, delay));
+    }
+    sigEl.classList.add('show');
+  }
+
+  // Hearts: use emoji nodes and animate with WA API
+  function spawnHeart(){
+    const el = document.createElement('div');
+    el.textContent = '💗';
+    el.style.position = 'fixed';
+    el.style.zIndex = 0;
+    el.style.left = (6 + Math.random()*88) + 'vw';
+    // start slightly below viewport
+    const startY = 110 + Math.random()*20; // in vh
+    el.style.top = startY + 'vh';
+    el.style.fontSize = (18 + Math.random()*28) + 'px';
+    el.style.pointerEvents = 'none';
+    heartsRoot.appendChild(el);
+
+    // animate upward and fade
+    const dur = 4200 + Math.random()*2600;
+    const translateTo = -120 - Math.random()*40; // in vh
+    el.animate([
+      { transform: translateY(0vh) scale(1), opacity: 1 },
+      { transform: translateY(${translateTo}vh) scale(0.9), opacity: 0.02 }
+    ], { duration: dur, easing: 'cubic-bezier(.2,.7,.2,1)' });
+
+    // remove after animation
+    setTimeout(()=> { try{ heartsRoot.removeChild(el); } catch(e){} }, dur + 100);
+  }
+
+  // start spawning hearts at steady interval
+  let heartsInterval = null;
+  function startHearts(){
+    if (heartsInterval) return;
+    spawnHeart(); // spawn one immediately
+    heartsInterval = setInterval(spawnHeart, 700);
+  }
+
+  // main auto-run
+  (async function main(){
+    await waitForReady();
+    startHearts();
+    // give a small lead for hearts to show
+    await new Promise(r => setTimeout(r, 220));
+    await typeText(MESSAGE);
+    // keep hearts running for a while then stop spawn
+    setTimeout(()=>{ clearInterval(heartsInterval); heartsInterval = null; }, 10000);
+  })();
+
+  // Provide replay on double-click (optional debug, harmless)
+  document.addEventListener('dblclick', async ()=>{
+    // replay typing and restart hearts briefly
+    typedEl.textContent = '';
+    sigEl.classList.remove('show');
+    startHearts();
+    await new Promise(r=>setTimeout(r,160));
+    await typeText(MESSAGE);
+    setTimeout(()=>{ clearInterval(heartsInterval); heartsInterval = null; }, 8000);
+  });
+
+})();
+</script>
+</body>
+</html>
